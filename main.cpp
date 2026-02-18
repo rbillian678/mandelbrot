@@ -8,7 +8,7 @@
 
 std::vector<std::vector<uint32_t>> mandelbrot_neon(float xmin, float xmax, float ymin, float ymax, uint32_t w, uint32_t h, uint32_t max_iter)
 {
-    // auto t0 = std::chrono::steady_clock::now();
+    auto t0 = std::chrono::steady_clock::now();
     float deltaX = (xmax - xmin) / w;
     float deltaY = (ymax - ymin) / h;
     std::vector<uint32_t> Z(h * w, 0); // maybe uint32_t
@@ -49,7 +49,7 @@ std::vector<std::vector<uint32_t>> mandelbrot_neon(float xmin, float xmax, float
                 //     return i;
                 // }
                 // Combine all lanes with AND — true only if all lanes are 0xFFFFFFFF
-                uint64x2_t pair = vreinterpretq_u64_u32(it);
+                uint64x2_t pair = vreinterpretq_u64_u32(mask);
                 uint64_t combined = vgetq_lane_u64(pair, 0) & vgetq_lane_u64(pair, 1);
 
                 bool all_equal = (combined == 0xFFFFFFFFFFFFFFFFull);
@@ -58,7 +58,7 @@ std::vector<std::vector<uint32_t>> mandelbrot_neon(float xmin, float xmax, float
                     break;
                 }
             }
-            vst1q_u32(&Z[j * w + i], it);
+            vst1q_u32(&Z[i * w + j], it);
             // Z[j][i] = maxIterj
         }
     }
@@ -68,11 +68,11 @@ std::vector<std::vector<uint32_t>> mandelbrot_neon(float xmin, float xmax, float
     {
         for (uint32_t j = 0; j < w; j++)
         {
-            ans[i][j] = Z[idx++];
+            ans[j][i] = Z[idx++];
         }
     }
-    // auto t1 = std::chrono::steady_clock::now();
-    // std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms" << std::endl;
+    auto t1 = std::chrono::steady_clock::now();
+    std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << "ms" << std::endl;
     return ans;
 }
 
